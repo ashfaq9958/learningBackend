@@ -21,9 +21,13 @@ const userSchema = new Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      match: [
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        "Please provide a valid email address",
+      ],
     },
 
-    fullName: {
+    fullname: {
       type: String,
       required: true,
       trim: true,
@@ -62,11 +66,17 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  // Only hash password if it has been modified
+  if (!this.isModified("password")) {
+    return; // Simply return, no next() needed with async
+  }
 
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+  try {
+    this.password = await bcrypt.hash(this.password, 10);
+  } catch (error) {
+    throw new Error(`Password hashing failed: ${error.message}`);
+  }
 });
 
 
@@ -80,7 +90,7 @@ userSchema.methods.generateAccessToken = function () {
       _id: this._id,
       email: this.email,
       username: this.username,
-      fullName: this.fullName,
+      fullname: this.fullname,
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
@@ -88,7 +98,6 @@ userSchema.methods.generateAccessToken = function () {
     }
   );
 };
-
 
 userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
