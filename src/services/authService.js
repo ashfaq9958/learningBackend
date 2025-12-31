@@ -1,5 +1,5 @@
-import { User } from "../models/user.model";
-import { ApiError } from "../utils/ApiError";
+import { User } from "../models/user.model.js";
+import { ApiError } from "../utils/ApiError.js";
 
 // Find user by email or username
 export const findUserByEmailOrUsername = async (email, username) => {
